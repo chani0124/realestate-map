@@ -5,17 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>부동산 매물 메모장 - Himkong</title>
 
-    <!-- ✅ TailwindCSS (안정버전) -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio,line-clamp"></script>
+    <!-- TailwindCSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- ✅ Leaflet -->
+    <!-- Leaflet -->
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- ✅ Supabase -->
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 
     <style>
@@ -24,27 +24,21 @@
         height: 100%;
         margin: 0;
         padding: 0;
-        overflow: hidden;
         background-color: #f8fafc;
       }
       #map {
         height: 100%;
         width: 100%;
       }
-      .modal-bg {
-        background-color: rgba(0, 0, 0, 0.4);
-      }
     </style>
   </head>
 
   <body class="flex flex-col h-screen">
-    <!-- ✅ 상단 헤더 -->
+    <!-- 상단 헤더 -->
     <header
       class="bg-white shadow p-4 flex justify-between items-center border-b border-gray-200"
     >
-      <h1 class="text-xl font-bold flex items-center">
-        🏠 부동산 매물 메모장
-      </h1>
+      <h1 class="text-xl font-bold flex items-center">🏠 부동산 매물 메모장</h1>
       <button
         id="openForm"
         class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
@@ -53,7 +47,7 @@
       </button>
     </header>
 
-    <!-- ✅ 메인 -->
+    <!-- 메인 -->
     <main class="flex flex-1 overflow-hidden">
       <!-- 왼쪽 리스트 -->
       <aside
@@ -67,10 +61,10 @@
       <div id="map" class="flex-1"></div>
     </main>
 
-    <!-- ✅ 매물 등록 폼 -->
+    <!-- 매물 등록 폼 -->
     <div
       id="formModal"
-      class="hidden fixed inset-0 modal-bg flex items-center justify-center z-50"
+      class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
     >
       <form
         id="add-form"
@@ -133,14 +127,14 @@
         <div class="flex gap-2">
           <input
             name="lat"
-            placeholder="위도 (선택)"
+            placeholder="위도"
             type="number"
             step="0.000001"
             class="w-1/2 border p-2 rounded"
           />
           <input
             name="lng"
-            placeholder="경도 (선택)"
+            placeholder="경도"
             type="number"
             step="0.000001"
             class="w-1/2 border p-2 rounded"
@@ -165,20 +159,7 @@
       </form>
     </div>
 
-    <!-- ✅ main.js 연결 -->
+    <!-- main.js -->
     <script src="./main.js"></script>
-
-    <script>
-      const openForm = document.getElementById('openForm');
-      const closeForm = document.getElementById('closeForm');
-      const formModal = document.getElementById('formModal');
-
-      openForm.addEventListener('click', () =>
-        formModal.classList.remove('hidden')
-      );
-      closeForm.addEventListener('click', () =>
-        formModal.classList.add('hidden')
-      );
-    </script>
   </body>
 </html>
