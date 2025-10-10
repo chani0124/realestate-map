@@ -66,7 +66,7 @@ document.getElementById("address").addEventListener("click", function () {
 
 // ✅ 카카오 좌표 변환 API (정확도 최고)
 async function getCoordsFromKakao(address) {
-  const REST_API_KEY = "넣은_카카오_REST_API_KEY"; // <<== 여기에 네 키만 입력!
+  const REST_API_KEY = "6831cf3e47e1e3e0896856c577b51b0f"; // <<== 여기에 네 키만 입력!
   const res = await fetch(
     `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
     {
@@ -130,3 +130,4 @@ document.getElementById("exportExcel").addEventListener("click", () => {
   XLSX.utils.book_append_sheet(wb, ws, "매물목록");
   XLSX.writeFile(wb, "매물목록.xlsx");
 });
+
