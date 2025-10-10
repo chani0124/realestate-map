@@ -1,177 +1,196 @@
-// ====== 전역 상태 ======
-let map, markerGroup;
-let properties = JSON.parse(localStorage.getItem("properties") || "[]");
-let activeFilter = "전체";
+// =========================
+// 환경설정 (여기만 손보시면 됩니다)
+// =========================
+const CONFIG = {
+  BRAND_NAME: "HimKong",
+  STORAGE: "local",          // "local" | "supabase"
+  SUPABASE_URL: "",          // 예: https://xxxx.supabase.co
+  SUPABASE_ANON_KEY: "",     // Supabase 프로젝트 anon key
+  TABLE: "properties"        // Supabase 테이블명
+};
 
-// ====== 지도 초기화 (Leaflet + OSM) ======
-function initMap() {
-  map = L.map("map", { zoomControl: true }).setView([37.5665, 126.9780], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution: "&copy; OpenStreetMap",
-  }).addTo(map);
+// 상태 뱃지
+const storageBadge = document.getElementById("storageBadge");
+storageBadge.textContent = CONFIG.STORAGE === "supabase" ? "서버저장: Supabase" : "로컬저장: 브라우저";
 
-  markerGroup = L.markerClusterGroup();
-  map.addLayer(markerGroup);
+// =========================
+// 지도 초기화 (Leaflet + OSM)
+// =========================
+let map = L.map("map").setView([37.5665, 126.9780], 13);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  maxZoom: 19,
+  attribution: "&copy; OpenStreetMap",
+}).addTo(map);
+
+const markerGroup = L.markerClusterGroup();
+map.addLayer(markerGroup);
+
+// =========================
+// 주소 → 좌표 (Nominatim)
+// =========================
+async function geocode(address) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`;
+  const res = await fetch(url, { headers: { "Accept-Language": "ko" } });
+  const arr = await res.json();
+  if (!arr || arr.length === 0) return null;
+  return { lat: parseFloat(arr[0].lat), lng: parseFloat(arr[0].lon) };
 }
 
-// ====== 주소 → 좌표 (Nominatim) ======
-async function geocodeByNominatim(address) {
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=1&addressdetails=0&q=${encodeURIComponent(address)}`;
-  const res = await fetch(url, {
-    headers: { "Accept-Language": "ko" },
+// 주소 검색 모달 (키워드 결과 리스트)
+async function searchAddresses(keyword) {
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=10&q=${encodeURIComponent(keyword)}`;
+  const res = await fetch(url, { headers: { "Accept-Language": "ko" } });
+  const arr = await res.json();
+  return arr.map(d => ({ display: d.display_name, lat: +d.lat, lng: +d.lon }));
+}
+
+// =========================
+// 데이터 저장소 (local ↔ supabase)
+// =========================
+let supabase = null;
+if (CONFIG.STORAGE === "supabase") {
+  if (!CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY) {
+    alert("Supabase URL / ANON KEY가 비어 있어 로컬 저장으로 동작합니다.");
+    CONFIG.STORAGE = "local";
+    storageBadge.textContent = "로컬저장: 브라우저";
+  } else {
+    supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  }
+}
+
+// CRUD 추상화
+async function db_list() {
+  if (CONFIG.STORAGE === "supabase") {
+    const { data, error } = await supabase.from(CONFIG.TABLE).select("*").order("id", { ascending: false });
+    if (error) { console.error(error); alert("서버 목록 로드 실패"); return []; }
+    return data;
+  } else {
+    return JSON.parse(localStorage.getItem("properties") || "[]");
+  }
+}
+async function db_insert(obj) {
+  if (CONFIG.STORAGE === "supabase") {
+    const { data, error } = await supabase.from(CONFIG.TABLE).insert(obj).select().single();
+    if (error) { console.error(error); alert("서버 저장 실패"); return null; }
+    return data;
+  } else {
+    const arr = await db_list();
+    obj.id = Date.now();
+    arr.unshift(obj);
+    localStorage.setItem("properties", JSON.stringify(arr));
+    return obj;
+  }
+}
+async function db_delete(id) {
+  if (CONFIG.STORAGE === "supabase") {
+    const { error } = await supabase.from(CONFIG.TABLE).delete().eq("id", id);
+    if (error) { console.error(error); alert("삭제 실패"); }
+  } else {
+    const arr = await db_list();
+    const next = arr.filter(p => p.id !== id);
+    localStorage.setItem("properties", JSON.stringify(next));
+  }
+}
+async function db_clear() {
+  if (CONFIG.STORAGE === "supabase") {
+    const { error } = await supabase.from(CONFIG.TABLE).delete().neq("id", null);
+    if (error) { console.error(error); alert("전체 삭제 실패"); }
+  } else {
+    localStorage.removeItem("properties");
+  }
+}
+
+// =========================
+// 렌더링
+// =========================
+let properties = [];
+const listEl = document.getElementById("propertyList");
+
+function propertyCard(p) {
+  const price = p.dealType === "월세" ? `${fmt(p.price)} / ${fmt(p.monthly)}` : `${fmt(p.price)}${p.dealType === "매매" ? "" : ""}`;
+  return `
+    <div class="property-item" data-id="${p.id}">
+      <div class="title">${p.type} <span class="text-slate-400">|</span> ${p.dealType}</div>
+      <div class="meta mt-1">
+        💰 ${price || "-"}<br/>
+        📍 ${p.address}<br/>
+        <span class="text-xs text-slate-500">면적 ${p.area || "-"}㎡ · 층수 ${p.floor || "-"} · 관리비 ${p.maintenance || "-"}</span>
+      </div>
+      <div class="actions">
+        <button class="btn text-slate-700 bg-slate-100 hover:bg-slate-200" data-action="focus">지도이동</button>
+        <button class="btn text-rose-700 bg-rose-50 hover:bg-rose-100" data-action="remove">삭제</button>
+      </div>
+    </div>
+  `;
+}
+function fmt(v){ if(v==null||v==='') return ''; return Number(v).toLocaleString(); }
+
+function bindCardEvents(card, p) {
+  card.querySelector('[data-action="focus"]').addEventListener("click", () => {
+    map.setView([p.lat, p.lng], 17);
   });
-  if (!res.ok) return null;
-  const data = await res.json();
-  if (!data || data.length === 0) return null;
-  const { lat, lon } = data[0];
-  return { lat: parseFloat(lat), lng: parseFloat(lon) };
+  card.querySelector('[data-action="remove"]').addEventListener("click", async () => {
+    if (!confirm("해당 매물을 삭제하시겠습니까?")) return;
+    await db_delete(p.id);
+    await refresh();
+  });
 }
 
-// ====== 목록/마커 렌더링 ======
-function renderProperties(filterType = "전체") {
+function drawMarkers(items){
   markerGroup.clearLayers();
-  const list = document.getElementById("propertyList");
-  list.innerHTML = "";
-
-  const filtered = properties.filter(p => filterType === "전체" || p.type === filterType);
-
-  filtered.forEach((p, idx) => {
-    // 마커
+  items.forEach(p=>{
     const marker = L.marker([p.lat, p.lng]).bindPopup(
-      `<b>${p.type}</b> | ${p.dealType}<br/>💰 ${p.price || 0} / ${p.monthly || 0}<br/>📍 ${p.address}`
+      `<b>${p.type}</b> | ${p.dealType}<br/>💰 ${p.price || ""} ${p.dealType==="월세" ? "/ "+(p.monthly||""):""}<br/>📍 ${p.address}`
     );
     markerGroup.addLayer(marker);
-
-    // 카드
-    const item = document.createElement("div");
-    item.className = "property-card border p-2 rounded bg-white cursor-pointer";
-    item.innerHTML = `
-      <div class="font-semibold">${p.type} | ${p.dealType}</div>
-      <div>💰 ${p.price || 0} / ${p.monthly || 0}</div>
-      <div class="text-gray-600 truncate">📍 ${p.address}</div>
-      <div class="mt-1 text-xs text-gray-500">면적 ${p.area || "-"}㎡ · 층수 ${p.floor || "-"} · 관리비 ${p.maintenance || "-"}</div>
-      <div class="mt-2 flex gap-2">
-        <button class="goto bg-gray-200 hover:bg-gray-300 px-2 py-0.5 rounded text-xs">지도이동</button>
-        <button class="del bg-red-500 hover:bg-red-600 text-white px-2 py-0.5 rounded text-xs">삭제</button>
-      </div>
-    `;
-
-    item.querySelector(".goto").addEventListener("click", (e) => {
-      e.stopPropagation();
-      map.setView([p.lat, p.lng], 17);
-      marker.openPopup();
-    });
-    item.querySelector(".del").addEventListener("click", (e) => {
-      e.stopPropagation();
-      properties.splice(properties.indexOf(p), 1);
-      localStorage.setItem("properties", JSON.stringify(properties));
-      renderProperties(activeFilter);
-    });
-
-    item.addEventListener("click", () => {
-      map.setView([p.lat, p.lng], 17);
-      marker.openPopup();
-    });
-    list.appendChild(item);
   });
 }
 
-// ====== 모달 열고 닫기 ======
-const formLayer = document.getElementById("propertyFormLayer");
-document.getElementById("openFormBtn").addEventListener("click", () => {
-  formLayer.style.display = "flex";
-});
-document.getElementById("closeFormBtn").addEventListener("click", () => {
-  formLayer.style.display = "none";
+async function refresh(filterType="전체") {
+  properties = await db_list();
+  const show = properties.filter(p => filterType === "전체" || p.type === filterType);
+
+  // 목록
+  listEl.innerHTML = show.map(propertyCard).join("");
+  listEl.querySelectorAll(".property-item").forEach((el, i)=>{
+    bindCardEvents(el, show[i]);
+  });
+
+  // 마커
+  drawMarkers(show);
+}
+
+// =========================
+// 필터 버튼
+// =========================
+document.querySelectorAll(".category-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".category-btn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    refresh(btn.dataset.type);
+  });
 });
 
-// ====== Enter 키로 제출 방지(반드시 클릭으로만 등록) ======
-document.getElementById("propertyFormLayer").addEventListener("keydown", (e) => {
+// =========================
+// 모달 열고 닫기 + Enter 방지
+// =========================
+const formLayer = document.getElementById("propertyFormLayer");
+document.getElementById("openFormBtn").addEventListener("click", ()=>{
+  formLayer.style.display = "flex";
+});
+document.getElementById("closeFormBtn").addEventListener("click", ()=>{
+  formLayer.style.display = "none";
+});
+document.getElementById("propertyForm").addEventListener("keydown", e=>{
   if (e.key === "Enter") e.preventDefault();
 });
 
-// ====== 주소검색 버튼 (다음 우편번호 있으면 사용) ======
-document.getElementById("searchAddr").addEventListener("click", () => {
-  if (window.daum && window.daum.Postcode) {
-    new daum.Postcode({
-      oncomplete: function (data) {
-        document.getElementById("address").value = data.address;
-      },
-    }).open();
-  } else {
-    alert("주소검색 모듈이 없어요. 주소를 직접 입력하세요.");
-  }
+// =========================
+// 주소검색 모달 (Nominatim)
+// =========================
+const addressLayer = document.getElementById("addressSearchLayer");
+document.getElementById("openAddressSearch").addEventListener("click", ()=>{
+  addressLayer.style.display = "flex";
+  document.getElementById("addressKeyword").focus();
 });
-
-// ====== 매물 등록 (클릭으로만) ======
-document.getElementById("submitBtn").addEventListener("click", async () => {
-  const address = document.getElementById("address").value.trim();
-  const type = document.getElementById("type").value;
-  const dealType = document.getElementById("dealType").value;
-  const price = document.getElementById("price").value;
-  const monthly = document.getElementById("monthly").value;
-  const area = document.getElementById("area").value;
-  const floor = document.getElementById("floor").value;
-  const maintenance = document.getElementById("maintenance").value;
-  const memo = document.getElementById("memo").value;
-
-  if (!address) {
-    alert("주소를 입력하세요.");
-    return;
-  }
-
-  // 주소 → 좌표
-  const coords = await geocodeByNominatim(address);
-  if (!coords) {
-    alert("주소 좌표를 찾지 못했습니다. 주소를 좀 더 정확히 입력해 주세요.");
-    return;
-  }
-
-  const newProperty = {
-    id: Date.now(),
-    address, type, dealType, price, monthly, area, floor, maintenance, memo,
-    lat: coords.lat, lng: coords.lng
-  };
-
-  properties.push(newProperty);
-  localStorage.setItem("properties", JSON.stringify(properties));
-
-  formLayer.style.display = "none";
-  // 입력값 리셋
-  document.getElementById("address").value = "";
-  document.getElementById("price").value = "";
-  document.getElementById("monthly").value = "";
-  document.getElementById("area").value = "";
-  document.getElementById("floor").value = "";
-  document.getElementById("maintenance").value = "";
-  document.getElementById("memo").value = "";
-
-  renderProperties(activeFilter);
-});
-
-// ====== 카테고리 필터 ======
-document.querySelectorAll(".category-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".category-btn").forEach(b => b.classList.remove("bg-blue-600","text-white"));
-    btn.classList.add("bg-blue-600","text-white");
-    activeFilter = btn.dataset.type;
-    renderProperties(activeFilter);
-  });
-});
-
-// ====== 엑셀 내보내기 ======
-document.getElementById("exportExcel").addEventListener("click", () => {
-  if (properties.length === 0) {
-    alert("등록된 매물이 없습니다.");
-    return;
-  }
-  const ws = XLSX.utils.json_to_sheet(properties);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "매물목록");
-  XLSX.writeFile(wb, "매물목록.xlsx");
-});
-
-// ====== 시작 ======
-initMap();
-renderProperties();
+document
