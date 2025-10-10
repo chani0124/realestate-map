@@ -1,5 +1,5 @@
 // ================================
-// 🏠 부동산 매물 메모장 완성 main.js
+// 🏠 부동산 매물 메모장 완성 main.js (2025-10 최신)
 // ================================
 
 // 지도 초기화
@@ -68,19 +68,15 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
-// ✅ 카카오 좌표 변환 API (JavaScript 키 방식)
+// ✅ 카카오 좌표 변환 API (JavaScript 키 + appkey 방식)
 async function getCoordsFromKakao(address) {
-  const JS_KEY = "4a7ad4f99cd514542c44be5cd36d3076c"; // ✅ 카카오 JavaScript 키 (himkong.com 도메인 등록 필수)
+  const JS_KEY = "4a7ad4f99cd514542c44be5cd36d3076c"; // ✅ JavaScript 키 (himkong.com 등록)
   try {
-    const res = await fetch(
-      `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
-      {
-        headers: {
-          Authorization: `KakaoAK ${JS_KEY}`,
-        },
-      }
-    );
+    const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(
+      address
+    )}&appkey=${JS_KEY}`;
 
+    const res = await fetch(url);
     if (!res.ok) {
       console.error("카카오 API 오류:", res.status, await res.text());
       alert("❌ 카카오 주소검색 실패 (" + res.status + ")");
