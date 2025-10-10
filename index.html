@@ -8,7 +8,7 @@
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Leaflet (지도) -->
+  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
@@ -22,7 +22,7 @@
 <body class="bg-gray-100 flex flex-col min-h-screen overflow-hidden">
 
   <!-- 헤더 -->
-  <header class="bg-white shadow p-4 flex justify-between items-center z-20 relative">
+  <header class="bg-white shadow p-4 flex justify-between items-center relative z-20">
     <h1 class="text-xl font-bold">🏠 부동산 매물 메모장</h1>
     <button id="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded">엑셀로 내보내기</button>
   </header>
@@ -30,18 +30,18 @@
   <!-- 상단 카테고리 -->
   <div class="bg-white border-b relative z-20">
     <div class="max-w-7xl mx-auto p-3 flex gap-2 overflow-x-auto text-sm">
-      <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">아파트</button>
-      <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">오피스텔</button>
-      <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">빌라/주택</button>
-      <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">원룸/투룸</button>
-      <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">상가/공장/토지</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="아파트">아파트</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="오피스텔">오피스텔</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="빌라/주택">빌라/주택</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="원룸/투룸">원룸/투룸</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="상가/공장/토지">상가/공장/토지</button>
     </div>
   </div>
 
   <!-- 메인 -->
   <main class="flex flex-1 min-h-0 relative">
     <!-- 왼쪽 -->
-    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0 relative z-10">
+    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0 z-10">
       <div class="p-3 border-b flex justify-between items-center">
         <h2 class="text-base font-semibold">매물 목록</h2>
         <button id="openFormBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">+ 매물 등록</button>
@@ -49,22 +49,21 @@
       <div id="propertyList" class="flex-1 overflow-y-auto p-3 space-y-3 text-sm"></div>
     </section>
 
-    <!-- 오른쪽 지도 -->
+    <!-- 지도 -->
     <section class="flex-1 relative min-h-0 z-0">
       <div id="map" class="absolute inset-0"></div>
     </section>
   </main>
 
   <!-- 매물 등록 폼 -->
-  <div id="propertyFormLayer" style="display:none;" class="fixed inset-0 bg-black/50 justify-center items-center z-[99999]">
-    <div class="bg-white w-full max-w-lg rounded shadow-lg p-5 relative z-[100000]">
+  <div id="propertyFormLayer" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-[99999]">
+    <div class="bg-white w-full max-w-lg rounded shadow-lg p-5 relative">
       <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       <h2 class="text-lg font-bold mb-3">매물 등록</h2>
       <form id="propertyForm" class="space-y-2">
         <div>
           <label class="block text-sm mb-1">주소</label>
           <input id="address" type="text" placeholder="예) 서울특별시 중구 세종대로 110" class="w-full border p-2 rounded text-sm" required/>
-          <p class="text-xs text-gray-500 mt-1">※ 대략적인 주소도 가능</p>
         </div>
         <div>
           <label class="block text-sm mb-1">매물 종류</label>
@@ -116,7 +115,6 @@
     </div>
   </div>
 
-  <!-- JS 로드 -->
   <script src="main.js"></script>
 </body>
 </html>
