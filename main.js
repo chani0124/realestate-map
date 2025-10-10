@@ -1,5 +1,5 @@
 // ================================
-// 🏠 부동산 매물 메모장 완성 main.js (2025-10 최신)
+// 🏠 부동산 매물 메모장 (2025-10 완성본) by ChatGPT & Chani
 // ================================
 
 // 지도 초기화
@@ -15,7 +15,7 @@ map.addLayer(markerGroup);
 // LocalStorage 로드
 let properties = JSON.parse(localStorage.getItem("properties")) || [];
 
-// 매물 표시
+// 매물 표시 함수
 function renderProperties(filterType = "전체") {
   markerGroup.clearLayers();
   const list = document.getElementById("propertyList");
@@ -30,7 +30,8 @@ function renderProperties(filterType = "전체") {
       markerGroup.addLayer(marker);
 
       const item = document.createElement("div");
-      item.className = "border p-2 rounded bg-gray-50 cursor-pointer hover:bg-blue-50 transition";
+      item.className =
+        "border p-2 rounded bg-gray-50 cursor-pointer hover:bg-blue-50 transition";
       item.innerHTML = `
         <b>${p.type}</b> | ${p.dealType}<br/>
         💰 ${p.price} / ${p.monthly}<br/>
@@ -45,7 +46,7 @@ function renderProperties(filterType = "전체") {
 }
 renderProperties();
 
-// 폼 열기/닫기
+// 폼 열기 / 닫기
 const formLayer = document.getElementById("propertyFormLayer");
 document.getElementById("openFormBtn").addEventListener("click", () => {
   formLayer.style.display = "flex";
@@ -54,7 +55,7 @@ document.getElementById("closeFormBtn").addEventListener("click", () => {
   formLayer.style.display = "none";
 });
 
-// ✅ 엔터키로 등록 방지
+// ✅ 엔터키로 폼 전송 방지
 document.getElementById("propertyForm").addEventListener("keydown", (e) => {
   if (e.key === "Enter") e.preventDefault();
 });
@@ -68,24 +69,24 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
-// ✅ 카카오 좌표 변환 API (JavaScript 키 + appkey 방식)
+// ✅ 카카오 주소 → 좌표 변환 (JavaScript 키, appkey 방식)
 async function getCoordsFromKakao(address) {
-  const JS_KEY = "4a7ad4f99cd514542c44be5cd36d3076c"; // ✅ JavaScript 키 (himkong.com 등록)
-  try {
-    const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(
-      address
-    )}&appkey=${JS_KEY}`;
+  const JS_KEY = "4a7ad4f99cd514542c44be5cd36d3076c"; // himkong.com JS 키
+  const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(
+    address
+  )}&analyze_type=exact&size=1&appkey=${JS_KEY}`;
 
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.error("카카오 API 오류:", res.status, await res.text());
-      alert("❌ 카카오 주소검색 실패 (" + res.status + ")");
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      console.error("카카오 API 응답:", response.status);
+      alert(`❌ 카카오 주소검색 실패 (${response.status})`);
       return null;
     }
 
-    const data = await res.json();
+    const data = await response.json();
     if (!data.documents || data.documents.length === 0) {
-      alert("⚠️ 주소를 찾을 수 없습니다. 다시 입력해주세요.");
+      alert("⚠️ 주소를 찾을 수 없습니다. 다시 시도해주세요.");
       return null;
     }
 
@@ -98,7 +99,7 @@ async function getCoordsFromKakao(address) {
   }
 }
 
-// ✅ 매물 등록
+// ✅ 매물 등록 (버튼 클릭 전용)
 document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
   const type = document.getElementById("type").value;
@@ -143,9 +144,9 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
 // ✅ 카테고리 필터
 document.querySelectorAll(".category-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".category-btn").forEach((b) =>
-      b.classList.remove("bg-blue-200")
-    );
+    document
+      .querySelectorAll(".category-btn")
+      .forEach((b) => b.classList.remove("bg-blue-200"));
     btn.classList.add("bg-blue-200");
     renderProperties(btn.dataset.type);
   });
