@@ -1,13 +1,25 @@
-/* 지도 영역 */
+/* 지도 기본 설정 */
 #map {
   width: 100%;
   height: 100%;
   min-height: 600px;
-  z-index: 1;
   position: relative;
+  z-index: 1;
 }
 
-/* 매물 등록 폼 레이어 - 항상 최상단 */
+/* 지도 관련 요소 전부 하위 z-index */
+.leaflet-container,
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane {
+  z-index: 1 !important;
+}
+
+/* 폼 레이어 */
 #propertyFormLayer {
   position: fixed !important;
   top: 0;
@@ -21,32 +33,13 @@
   z-index: 99999 !important;
 }
 
-/* Leaflet 지도 내부 요소가 위로 안 뜨게 강제 */
-.leaflet-container {
-  z-index: 1 !important;
-}
-.leaflet-pane,
-.leaflet-map-pane,
-.leaflet-tile,
-.leaflet-overlay-pane,
-.leaflet-shadow-pane,
-.leaflet-marker-pane,
-.leaflet-popup-pane {
-  z-index: 1 !important;
+/* Tailwind의 fixed와 충돌 방지 */
+.fixed {
+  position: fixed !important;
 }
 
-/* 전체 높이 보정 */
+/* 페이지 높이 고정 */
 html, body {
   height: 100%;
   overflow: hidden;
-}
-
-/* 매물 목록 스크롤 */
-#propertyList {
-  overflow-y: auto;
-}
-
-/* Tailwind 충돌 방지 */
-.fixed {
-  position: fixed !important;
 }
