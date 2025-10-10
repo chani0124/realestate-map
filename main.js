@@ -41,7 +41,7 @@ function renderProperties(filterType = "전체") {
 }
 renderProperties();
 
-// 폼 열기/닫기
+// 폼 제어
 const formLayer = document.getElementById("propertyFormLayer");
 document.getElementById("openFormBtn").addEventListener("click", () => {
   formLayer.style.display = "flex";
@@ -50,12 +50,12 @@ document.getElementById("closeFormBtn").addEventListener("click", () => {
   formLayer.style.display = "none";
 });
 
-// ✅ 엔터키 등록 방지
+// 엔터 방지
 document.getElementById("propertyForm").addEventListener("keydown", (e) => {
   if (e.key === "Enter") e.preventDefault();
 });
 
-// ✅ 주소 클릭 시 카카오 주소검색 열기
+// ✅ 카카오 주소검색
 document.getElementById("address").addEventListener("click", function () {
   new daum.Postcode({
     oncomplete: function (data) {
@@ -64,20 +64,13 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
-// ✅ 카카오 좌표 변환 API (JavaScript SDK 방식)
+// ✅ 좌표 변환 (JavaScript SDK 사용)
 async function getCoordsFromKakao(address) {
   return new Promise((resolve, reject) => {
-    if (!window.kakao || !window.kakao.maps) {
-      reject("카카오맵 SDK가 로드되지 않았습니다.");
-      return;
-    }
-
     const geocoder = new kakao.maps.services.Geocoder();
     geocoder.addressSearch(address, (result, status) => {
       if (status === kakao.maps.services.Status.OK) {
-        const lat = parseFloat(result[0].y);
-        const lng = parseFloat(result[0].x);
-        resolve({ lat, lng });
+        resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
       } else {
         reject("주소 검색 실패");
       }
@@ -85,7 +78,7 @@ async function getCoordsFromKakao(address) {
   });
 }
 
-// ✅ 매물 등록 버튼
+// ✅ 매물 등록
 document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
   const type = document.getElementById("type").value;
@@ -97,36 +90,21 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
   const maintenance = document.getElementById("maintenance").value;
   const memo = document.getElementById("memo").value;
 
-  if (!address) {
-    alert("주소를 입력해주세요.");
-    return;
-  }
+  if (!address) return alert("주소를 입력해주세요.");
 
   try {
     const coords = await getCoordsFromKakao(address);
-    const newProperty = {
-      address,
-      type,
-      dealType,
-      price,
-      monthly,
-      area,
-      floor,
-      maintenance,
-      memo,
-      lat: coords.lat,
-      lng: coords.lng,
-    };
+    const newProperty = { address, type, dealType, price, monthly, area, floor, maintenance, memo, ...coords };
     properties.push(newProperty);
     localStorage.setItem("properties", JSON.stringify(properties));
     formLayer.style.display = "none";
     renderProperties();
-  } catch (error) {
-    alert("❌ 카카오 주소검색 실패: " + error);
+  } catch (e) {
+    alert("❌ 카카오 주소검색 실패: " + e);
   }
 });
 
-// 카테고리 필터
+// 필터
 document.querySelectorAll(".category-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
     document.querySelectorAll(".category-btn").forEach((b) => b.classList.remove("bg-blue-200"));
@@ -137,11 +115,7 @@ document.querySelectorAll(".category-btn").forEach((btn) => {
 
 // 엑셀 내보내기
 document.getElementById("exportExcel").addEventListener("click", () => {
-  if (properties.length === 0) {
-    alert("등록된 매물이 없습니다.");
-    return;
-  }
-
+  if (properties.length === 0) return alert("등록된 매물이 없습니다.");
   const ws = XLSX.utils.json_to_sheet(properties);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "매물목록");
