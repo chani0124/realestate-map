@@ -17,6 +17,9 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
+  <!-- SheetJS (엑셀 내보내기용) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
   <link rel="stylesheet" href="style.css"/>
 </head>
 <body class="bg-gray-100 flex flex-col min-h-screen overflow-hidden">
@@ -30,6 +33,7 @@
   <!-- 상단 카테고리 -->
   <div class="bg-white border-b relative z-20">
     <div class="max-w-7xl mx-auto p-3 flex gap-2 overflow-x-auto text-sm">
+      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="전체">전체</button>
       <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="아파트">아파트</button>
       <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="오피스텔">오피스텔</button>
       <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="빌라/주택">빌라/주택</button>
@@ -61,55 +65,26 @@
       <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       <h2 class="text-lg font-bold mb-3">매물 등록</h2>
       <form id="propertyForm" class="space-y-2">
-        <div>
-          <label class="block text-sm mb-1">주소</label>
-          <input id="address" type="text" placeholder="예) 서울특별시 중구 세종대로 110" class="w-full border p-2 rounded text-sm" required/>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">매물 종류</label>
-          <select id="type" class="w-full border p-2 rounded text-sm">
-            <option>아파트</option>
-            <option>오피스텔</option>
-            <option>빌라/주택</option>
-            <option>원룸/투룸</option>
-            <option>상가/공장/토지</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">거래 유형</label>
-          <select id="dealType" class="w-full border p-2 rounded text-sm">
-            <option>매매</option>
-            <option>전세</option>
-            <option>월세</option>
-            <option>단기임대</option>
-          </select>
-        </div>
-        <div class="flex gap-2">
-          <div class="flex-1">
-            <label class="block text-sm mb-1">보증금/매매가</label>
-            <input id="price" type="number" class="w-full border p-2 rounded text-sm"/>
-          </div>
-          <div class="flex-1">
-            <label class="block text-sm mb-1">월세</label>
-            <input id="monthly" type="number" class="w-full border p-2 rounded text-sm"/>
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">면적 (㎡)</label>
-          <input id="area" type="number" class="w-full border p-2 rounded text-sm"/>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">층수</label>
-          <input id="floor" type="text" class="w-full border p-2 rounded text-sm"/>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">관리비</label>
-          <input id="maintenance" type="number" class="w-full border p-2 rounded text-sm"/>
-        </div>
-        <div>
-          <label class="block text-sm mb-1">기타 메모</label>
-          <textarea id="memo" class="w-full border p-2 rounded text-sm"></textarea>
-        </div>
+        <input id="address" type="text" placeholder="주소" class="w-full border p-2 rounded text-sm" required/>
+        <select id="type" class="w-full border p-2 rounded text-sm">
+          <option>아파트</option>
+          <option>오피스텔</option>
+          <option>빌라/주택</option>
+          <option>원룸/투룸</option>
+          <option>상가/공장/토지</option>
+        </select>
+        <select id="dealType" class="w-full border p-2 rounded text-sm">
+          <option>매매</option>
+          <option>전세</option>
+          <option>월세</option>
+          <option>단기임대</option>
+        </select>
+        <input id="price" type="text" placeholder="보증금/매매가" class="w-full border p-2 rounded text-sm"/>
+        <input id="monthly" type="text" placeholder="월세" class="w-full border p-2 rounded text-sm"/>
+        <input id="area" type="number" placeholder="면적 (㎡)" class="w-full border p-2 rounded text-sm"/>
+        <input id="floor" type="text" placeholder="층수" class="w-full border p-2 rounded text-sm"/>
+        <input id="maintenance" type="text" placeholder="관리비" class="w-full border p-2 rounded text-sm"/>
+        <textarea id="memo" placeholder="기타 메모" class="w-full border p-2 rounded text-sm"></textarea>
         <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">매물 등록</button>
       </form>
     </div>
