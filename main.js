@@ -1,7 +1,3 @@
-// ================================
-// 🏠 부동산 매물 메모장 (2025-10 완성본) by ChatGPT & Chani
-// ================================
-
 // 지도 초기화
 let map = L.map("map").setView([37.5665, 126.9780], 13);
 L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
@@ -15,7 +11,7 @@ map.addLayer(markerGroup);
 // LocalStorage 로드
 let properties = JSON.parse(localStorage.getItem("properties")) || [];
 
-// 매물 표시 함수
+// 매물 표시
 function renderProperties(filterType = "전체") {
   markerGroup.clearLayers();
   const list = document.getElementById("propertyList");
@@ -30,8 +26,7 @@ function renderProperties(filterType = "전체") {
       markerGroup.addLayer(marker);
 
       const item = document.createElement("div");
-      item.className =
-        "border p-2 rounded bg-gray-50 cursor-pointer hover:bg-blue-50 transition";
+      item.className = "border p-2 rounded bg-gray-50 cursor-pointer";
       item.innerHTML = `
         <b>${p.type}</b> | ${p.dealType}<br/>
         💰 ${p.price} / ${p.monthly}<br/>
@@ -46,7 +41,7 @@ function renderProperties(filterType = "전체") {
 }
 renderProperties();
 
-// 폼 열기 / 닫기
+// 폼 열기/닫기
 const formLayer = document.getElementById("propertyFormLayer");
 document.getElementById("openFormBtn").addEventListener("click", () => {
   formLayer.style.display = "flex";
@@ -55,12 +50,12 @@ document.getElementById("closeFormBtn").addEventListener("click", () => {
   formLayer.style.display = "none";
 });
 
-// ✅ 엔터키로 폼 전송 방지
+// ✅ 엔터키 등록 방지
 document.getElementById("propertyForm").addEventListener("keydown", (e) => {
   if (e.key === "Enter") e.preventDefault();
 });
 
-// ✅ 카카오 주소검색 팝업
+// ✅ 주소 클릭 시 카카오 주소검색 열기
 document.getElementById("address").addEventListener("click", function () {
   new daum.Postcode({
     oncomplete: function (data) {
@@ -69,37 +64,28 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
-// ✅ 카카오 주소 → 좌표 변환 (JavaScript 키, appkey 방식)
+// ✅ 카카오 좌표 변환 API (JavaScript SDK 방식)
 async function getCoordsFromKakao(address) {
-  const JS_KEY = "4a7ad4f99cd514542c44be5cd36d3076c"; // himkong.com JS 키
-  const url = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(
-    address
-  )}&analyze_type=exact&size=1&appkey=${JS_KEY}`;
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      console.error("카카오 API 응답:", response.status);
-      alert(`❌ 카카오 주소검색 실패 (${response.status})`);
-      return null;
+  return new Promise((resolve, reject) => {
+    if (!window.kakao || !window.kakao.maps) {
+      reject("카카오맵 SDK가 로드되지 않았습니다.");
+      return;
     }
 
-    const data = await response.json();
-    if (!data.documents || data.documents.length === 0) {
-      alert("⚠️ 주소를 찾을 수 없습니다. 다시 시도해주세요.");
-      return null;
-    }
-
-    const { x, y } = data.documents[0];
-    return { lat: parseFloat(y), lng: parseFloat(x) };
-  } catch (err) {
-    console.error("카카오 주소 변환 오류:", err);
-    alert("⚠️ 주소 변환 중 오류 발생!");
-    return null;
-  }
+    const geocoder = new kakao.maps.services.Geocoder();
+    geocoder.addressSearch(address, (result, status) => {
+      if (status === kakao.maps.services.Status.OK) {
+        const lat = parseFloat(result[0].y);
+        const lng = parseFloat(result[0].x);
+        resolve({ lat, lng });
+      } else {
+        reject("주소 검색 실패");
+      }
+    });
+  });
 }
 
-// ✅ 매물 등록 (버튼 클릭 전용)
+// ✅ 매물 등록 버튼
 document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
   const type = document.getElementById("type").value;
@@ -116,48 +102,46 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     return;
   }
 
-  const coords = await getCoordsFromKakao(address);
-  if (!coords) return;
-
-  const newProperty = {
-    address,
-    type,
-    dealType,
-    price,
-    monthly,
-    area,
-    floor,
-    maintenance,
-    memo,
-    lat: coords.lat,
-    lng: coords.lng,
-  };
-
-  properties.push(newProperty);
-  localStorage.setItem("properties", JSON.stringify(properties));
-
-  formLayer.style.display = "none";
-  renderProperties();
-  alert("✅ 매물이 등록되었습니다!");
+  try {
+    const coords = await getCoordsFromKakao(address);
+    const newProperty = {
+      address,
+      type,
+      dealType,
+      price,
+      monthly,
+      area,
+      floor,
+      maintenance,
+      memo,
+      lat: coords.lat,
+      lng: coords.lng,
+    };
+    properties.push(newProperty);
+    localStorage.setItem("properties", JSON.stringify(properties));
+    formLayer.style.display = "none";
+    renderProperties();
+  } catch (error) {
+    alert("❌ 카카오 주소검색 실패: " + error);
+  }
 });
 
-// ✅ 카테고리 필터
+// 카테고리 필터
 document.querySelectorAll(".category-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document
-      .querySelectorAll(".category-btn")
-      .forEach((b) => b.classList.remove("bg-blue-200"));
+    document.querySelectorAll(".category-btn").forEach((b) => b.classList.remove("bg-blue-200"));
     btn.classList.add("bg-blue-200");
     renderProperties(btn.dataset.type);
   });
 });
 
-// ✅ 엑셀 내보내기
+// 엑셀 내보내기
 document.getElementById("exportExcel").addEventListener("click", () => {
   if (properties.length === 0) {
     alert("등록된 매물이 없습니다.");
     return;
   }
+
   const ws = XLSX.utils.json_to_sheet(properties);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "매물목록");
