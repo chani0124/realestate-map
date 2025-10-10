@@ -17,8 +17,11 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-  <!-- SheetJS (엑셀 내보내기용) -->
+  <!-- SheetJS (엑셀 내보내기) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+  <!-- ✅ 카카오 주소검색 API -->
+  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 
   <link rel="stylesheet" href="style.css"/>
 </head>
@@ -65,7 +68,7 @@
       <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       <h2 class="text-lg font-bold mb-3">매물 등록</h2>
       <form id="propertyForm" class="space-y-2">
-        <input id="address" type="text" placeholder="주소" class="w-full border p-2 rounded text-sm" required/>
+        <input id="address" type="text" placeholder="주소 검색" readonly class="w-full border p-2 rounded text-sm cursor-pointer" required/>
         <select id="type" class="w-full border p-2 rounded text-sm">
           <option>아파트</option>
           <option>오피스텔</option>
@@ -85,7 +88,7 @@
         <input id="floor" type="text" placeholder="층수" class="w-full border p-2 rounded text-sm"/>
         <input id="maintenance" type="text" placeholder="관리비" class="w-full border p-2 rounded text-sm"/>
         <textarea id="memo" placeholder="기타 메모" class="w-full border p-2 rounded text-sm"></textarea>
-        <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">매물 등록</button>
+        <button id="submitBtn" type="button" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">매물 등록</button>
       </form>
     </div>
   </div>
