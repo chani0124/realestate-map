@@ -19,16 +19,16 @@
 
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen">
+<body class="bg-gray-100 flex flex-col min-h-screen overflow-hidden">
 
   <!-- 헤더 -->
-  <header class="bg-white shadow p-4 flex justify-between items-center">
+  <header class="bg-white shadow p-4 flex justify-between items-center z-20 relative">
     <h1 class="text-xl font-bold">🏠 부동산 매물 메모장</h1>
     <button id="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded">엑셀로 내보내기</button>
   </header>
 
   <!-- 상단 카테고리 -->
-  <div class="bg-white border-b">
+  <div class="bg-white border-b relative z-20">
     <div class="max-w-7xl mx-auto p-3 flex gap-2 overflow-x-auto text-sm">
       <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">아파트</button>
       <button class="px-3 py-1 rounded bg-gray-100 hover:bg-blue-100">오피스텔</button>
@@ -39,9 +39,9 @@
   </div>
 
   <!-- 메인 -->
-  <main class="flex flex-1 min-h-0">
+  <main class="flex flex-1 min-h-0 relative">
     <!-- 왼쪽 -->
-    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0">
+    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0 relative z-10">
       <div class="p-3 border-b flex justify-between items-center">
         <h2 class="text-base font-semibold">매물 목록</h2>
         <button id="openFormBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">+ 매물 등록</button>
@@ -50,14 +50,14 @@
     </section>
 
     <!-- 오른쪽 지도 -->
-    <section class="flex-1 relative min-h-0">
+    <section class="flex-1 relative min-h-0 z-0">
       <div id="map" class="absolute inset-0"></div>
     </section>
   </main>
 
   <!-- 매물 등록 폼 -->
-  <div id="propertyFormLayer" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50">
-    <div class="bg-white w-full max-w-lg rounded shadow-lg p-5 relative">
+  <div id="propertyFormLayer" style="display:none;" class="fixed inset-0 bg-black/50 justify-center items-center z-[99999]">
+    <div class="bg-white w-full max-w-lg rounded shadow-lg p-5 relative z-[100000]">
       <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       <h2 class="text-lg font-bold mb-3">매물 등록</h2>
       <form id="propertyForm" class="space-y-2">
@@ -116,7 +116,7 @@
     </div>
   </div>
 
-  <!-- JS 로드 (마지막에 위치해야 작동함) -->
+  <!-- JS 로드 -->
   <script src="main.js"></script>
 </body>
 </html>
