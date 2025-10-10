@@ -193,4 +193,67 @@ document.getElementById("openAddressSearch").addEventListener("click", ()=>{
   addressLayer.style.display = "flex";
   document.getElementById("addressKeyword").focus();
 });
-document
+document.getElementById("closeAddressSearch").addEventListener("click", ()=>{
+  addressLayer.style.display = "none";
+});
+
+document.getElementById("addressSearchBtn").addEventListener("click", async ()=>{
+  const kw = document.getElementById("addressKeyword").value.trim();
+  if (!kw) return;
+  const resultBox = document.getElementById("addressSearchResult");
+  resultBox.innerHTML = `<div class="text-sm text-slate-500">검색 중...</div>`;
+  const results = await searchAddresses(kw);
+  if (!results.length) {
+    resultBox.innerHTML = `<div class="text-sm text-slate-500">검색 결과가 없습니다.</div>`;
+    return;
+  }
+  resultBox.innerHTML = results.map(r=>`
+    <button class="w-full text-left p-2 rounded border hover:bg-slate-50" data-lat="${r.lat}" data-lng="${r.lng}" data-display="${r.display}">
+      ${r.display}
+    </button>
+  `).join("");
+  resultBox.querySelectorAll("button").forEach(btn=>{
+    btn.addEventListener("click", ()=>{
+      document.getElementById("address").value = btn.dataset.display;
+      addressLayer.style.display = "none";
+    });
+  });
+});
+
+// =========================
+/* 저장 */
+// =========================
+document.getElementById("submitBtn").addEventListener("click", async ()=>{
+  const address = document.getElementById("address").value.trim();
+  const type = document.getElementById("type").value;
+  const dealType = document.getElementById("dealType").value;
+  const price = document.getElementById("price").value;
+  const monthly = document.getElementById("monthly").value;
+  const area = document.getElementById("area").value;
+  const floor = document.getElementById("floor").value;
+  const maintenance = document.getElementById("maintenance").value;
+  const memo = document.getElementById("memo").value;
+
+  if (!address) { alert("주소를 입력해주세요."); return; }
+
+  const coords = await geocode(address);
+  if (!coords) { alert("주소의 좌표를 찾을 수 없습니다."); return; }
+
+  const newItem = { address, type, dealType, price, monthly, area, floor, maintenance, memo, lat: coords.lat, lng: coords.lng };
+
+  const saved = await db_insert(newItem);
+  if (saved) {
+    formLayer.style.display = "none";
+    await refresh(document.querySelector(".category-btn.active").dataset.type || "전체");
+  }
+});
+
+// 전체 삭제
+document.getElementById("clearAllBtn").addEventListener("click", async ()=>{
+  if (!confirm("모든 매물을 삭제하시겠습니까?")) return;
+  await db_clear();
+  await refresh(document.querySelector(".category-btn.active").dataset.type || "전체");
+});
+
+// 초기 로드
+refresh();
