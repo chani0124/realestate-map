@@ -1,80 +1,87 @@
-// -------------------------------
-// 🏠 Himkong Real Estate Map (Supabase 연결 버전)
-// -------------------------------
+// Supabase 연결 설정
+const SUPABASE_URL = "https://ayokcqbqrmgrssxujqvy.supabase.co";
+const SUPABASE_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5b2tjcWJxcm1ncnNzeHVqcXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwNjk2MzAsImV4cCI6MjA3NTY0NTYzMH0.iAZLbT6Uqk5FP8vfx7FZuBCg03P6M3dXeQQjc5ACfm0";
 
-const SUPABASE_URL = 'https://ayokcqbqrmgrssxujqvy.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF5b2tjcWJxcm1ncnNzeHVqcXZ5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwNjk2MzAsImV4cCI6MjA3NTY0NTYzMH0.iAZLbT6Uqk5FP8vfx7FZuBCg03P6M3dXeQQjc5ACfm0';
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ✅ 지도 초기화
-const map = L.map('map').setView([37.5665, 126.9780], 12);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  maxZoom: 19,
+// 지도 초기화 (서울 기준)
+const map = L.map("map").setView([37.5665, 126.978], 12);
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+  attribution: "&copy; OpenStreetMap contributors",
 }).addTo(map);
 
-// ✅ 매물 불러오기
+const propertyList = document.getElementById("property-list");
+
+// 매물 목록 불러오기
 async function loadProperties() {
-  const { data, error } = await supabase.from('properties').select('*');
+  propertyList.innerHTML = "<p class='text-gray-500 text-center mt-5'>불러오는 중...</p>";
+  const { data, error } = await supabase.from("properties").select("*").order("id", { ascending: false });
+
   if (error) {
-    alert('서버 오류: ' + error.message);
+    propertyList.innerHTML = `<p class='text-red-500 text-center'>데이터 불러오기 실패 😢</p>`;
+    console.error(error);
     return;
   }
 
-  const list = document.getElementById('property-list');
-  list.innerHTML = '';
-
-  data.forEach((p) => {
-    const item = document.createElement('div');
-    item.className = 'border-b p-3 hover:bg-gray-50 transition';
-    item.innerHTML = `
-      <div class="font-bold">${p.type} | ${p.dealType}</div>
-      <div>${p.address}</div>
-      <div class="text-blue-600">${p.price ?? '-'} / ${p.monthly ?? '-'}</div>
-      <div class="text-sm text-gray-500">${p.area ?? ''}㎡ ${p.floor ?? ''}</div>
-    `;
-    list.appendChild(item);
-
-    if (p.lat && p.lng) {
-      L.marker([p.lat, p.lng])
-        .addTo(map)
-        .bindPopup(`<b>${p.type}</b><br>${p.address}<br>${p.price ?? '-'} / ${p.monthly ?? '-'}`);
-    }
-  });
+  propertyList.innerHTML = "";
+  data.forEach((item) => addPropertyCard(item));
 }
 
-// ✅ 매물 등록
-async function addProperty(form) {
-  const newProperty = {
-    address: form.address.value,
-    type: form.type.value,
-    dealType: form.dealType.value,
-    price: parseFloat(form.price.value) || null,
-    monthly: parseFloat(form.monthly.value) || null,
-    area: parseFloat(form.area.value) || null,
-    floor: form.floor.value,
-    maintenance: parseFloat(form.maintenance.value) || null,
-    memo: form.memo.value,
-    lat: parseFloat(form.lat.value) || null,
-    lng: parseFloat(form.lng.value) || null,
-  };
+// 매물 카드 생성
+function addPropertyCard(item) {
+  const card = document.createElement("div");
+  card.className = "border rounded p-3 mb-2 shadow hover:bg-gray-50";
+  card.innerHTML = `
+    <h3 class="font-bold text-lg">${item.type} | ${item.dealType}</h3>
+    <p class="text-sm text-gray-600">${item.address}</p>
+    <p class="mt-1">💰 ${item.price || 0} / ${item.monthly || 0}</p>
+    <p class="text-sm text-gray-500">${item.area || "-"}㎡ | ${item.floor || "-"}층 | 관리비 ${item.maintenance || 0}</p>
+    <button class="mt-2 bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600">지도이동</button>
+  `;
+  propertyList.appendChild(card);
 
-  const { error } = await supabase.from('properties').insert([newProperty]);
-  if (error) {
-    alert('❌ 매물 등록 실패: ' + error.message);
-  } else {
-    alert('✅ 매물 등록 완료!');
-    form.reset();
-    formModal.classList.add('hidden');
-    loadProperties();
+  if (item.lat && item.lng) {
+    const marker = L.marker([item.lat, item.lng]).addTo(map);
+    marker.bindPopup(`<b>${item.type}</b><br>${item.address}<br>${item.dealType} ${item.price || 0}/${item.monthly || 0}`);
+    card.querySelector("button").addEventListener("click", () => {
+      map.setView([item.lat, item.lng], 16);
+      marker.openPopup();
+    });
   }
 }
 
-// ✅ 초기 실행
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('add-form');
-  form.addEventListener('submit', (e) => {
-    e.preventDefault();
-    addProperty(form);
-  });
-  loadProperties();
+// 새 매물 등록
+const addForm = document.getElementById("add-form");
+addForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const formData = Object.fromEntries(new FormData(addForm));
+  formData.price = Number(formData.price || 0);
+  formData.monthly = Number(formData.monthly || 0);
+  formData.area = Number(formData.area || 0);
+  formData.maintenance = Number(formData.maintenance || 0);
+  formData.lat = Number(formData.lat || 0);
+  formData.lng = Number(formData.lng || 0);
+
+  const { data, error } = await supabase.from("properties").insert([formData]).select();
+  if (error) {
+    alert("등록 실패 😢");
+    console.error(error);
+  } else {
+    alert("등록 완료 🎉");
+    addForm.reset();
+    document.getElementById("formModal").classList.add("hidden");
+    addPropertyCard(data[0]);
+  }
 });
+
+// 모달 열기/닫기
+document.getElementById("openForm").addEventListener("click", () => {
+  document.getElementById("formModal").classList.remove("hidden");
+});
+document.getElementById("closeForm").addEventListener("click", () => {
+  document.getElementById("formModal").classList.add("hidden");
+});
+
+// 실행
+loadProperties();
