@@ -8,10 +8,9 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let markerGroup = L.markerClusterGroup();
 map.addLayer(markerGroup);
 
-// LocalStorage 로드
 let properties = JSON.parse(localStorage.getItem("properties")) || [];
 
-// 매물 표시
+// 매물 렌더링
 function renderProperties(filterType = "전체") {
   markerGroup.clearLayers();
   const list = document.getElementById("propertyList");
@@ -27,11 +26,7 @@ function renderProperties(filterType = "전체") {
 
       const item = document.createElement("div");
       item.className = "border p-2 rounded bg-gray-50 cursor-pointer";
-      item.innerHTML = `
-        <b>${p.type}</b> | ${p.dealType}<br/>
-        💰 ${p.price} / ${p.monthly}<br/>
-        📍 ${p.address}
-      `;
+      item.innerHTML = `<b>${p.type}</b> | ${p.dealType}<br/>💰 ${p.price} / ${p.monthly}<br/>📍 ${p.address}`;
       item.addEventListener("click", () => {
         map.setView([p.lat, p.lng], 17);
         marker.openPopup();
@@ -50,12 +45,7 @@ document.getElementById("closeFormBtn").addEventListener("click", () => {
   formLayer.style.display = "none";
 });
 
-// 엔터 방지
-document.getElementById("propertyForm").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") e.preventDefault();
-});
-
-// ✅ 카카오 주소검색
+// 주소검색
 document.getElementById("address").addEventListener("click", function () {
   new daum.Postcode({
     oncomplete: function (data) {
@@ -64,60 +54,43 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
-// ✅ 좌표 변환 (JavaScript SDK 사용)
+// 카카오 지오코딩 (좌표 변환)
 async function getCoordsFromKakao(address) {
   return new Promise((resolve, reject) => {
     const geocoder = new kakao.maps.services.Geocoder();
     geocoder.addressSearch(address, (result, status) => {
       if (status === kakao.maps.services.Status.OK) {
         resolve({ lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) });
-      } else {
-        reject("주소 검색 실패");
-      }
+      } else reject("주소 검색 실패");
     });
   });
 }
 
-// ✅ 매물 등록
+// 등록 버튼
 document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
-  const type = document.getElementById("type").value;
-  const dealType = document.getElementById("dealType").value;
-  const price = document.getElementById("price").value;
-  const monthly = document.getElementById("monthly").value;
-  const area = document.getElementById("area").value;
-  const floor = document.getElementById("floor").value;
-  const maintenance = document.getElementById("maintenance").value;
-  const memo = document.getElementById("memo").value;
-
   if (!address) return alert("주소를 입력해주세요.");
 
   try {
     const coords = await getCoordsFromKakao(address);
-    const newProperty = { address, type, dealType, price, monthly, area, floor, maintenance, memo, ...coords };
-    properties.push(newProperty);
+    const data = {
+      address,
+      type: document.getElementById("type").value,
+      dealType: document.getElementById("dealType").value,
+      price: document.getElementById("price").value,
+      monthly: document.getElementById("monthly").value,
+      area: document.getElementById("area").value,
+      floor: document.getElementById("floor").value,
+      maintenance: document.getElementById("maintenance").value,
+      memo: document.getElementById("memo").value,
+      ...coords,
+    };
+
+    properties.push(data);
     localStorage.setItem("properties", JSON.stringify(properties));
     formLayer.style.display = "none";
     renderProperties();
   } catch (e) {
     alert("❌ 카카오 주소검색 실패: " + e);
   }
-});
-
-// 필터
-document.querySelectorAll(".category-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    document.querySelectorAll(".category-btn").forEach((b) => b.classList.remove("bg-blue-200"));
-    btn.classList.add("bg-blue-200");
-    renderProperties(btn.dataset.type);
-  });
-});
-
-// 엑셀 내보내기
-document.getElementById("exportExcel").addEventListener("click", () => {
-  if (properties.length === 0) return alert("등록된 매물이 없습니다.");
-  const ws = XLSX.utils.json_to_sheet(properties);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "매물목록");
-  XLSX.writeFile(wb, "매물목록.xlsx");
 });
