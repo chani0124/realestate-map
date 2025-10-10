@@ -64,6 +64,21 @@ document.getElementById("address").addEventListener("click", function () {
   }).open();
 });
 
+// ✅ 카카오 좌표 변환 API (정확도 최고)
+async function getCoordsFromKakao(address) {
+  const REST_API_KEY = "넣은_카카오_REST_API_KEY"; // <<== 여기에 네 키만 입력!
+  const res = await fetch(
+    `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`,
+    {
+      headers: { Authorization: `KakaoAK ${REST_API_KEY}` },
+    }
+  );
+  const data = await res.json();
+  if (data.documents.length === 0) return null;
+  const { x, y } = data.documents[0];
+  return { lat: parseFloat(y), lng: parseFloat(x) };
+}
+
 // 매물 등록
 document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
@@ -81,21 +96,15 @@ document.getElementById("submitBtn").addEventListener("click", async () => {
     return;
   }
 
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-  );
-  const data = await res.json();
-  if (!data.length) {
-    alert("주소를 찾을 수 없습니다. 정확히 입력해주세요.");
+  const coords = await getCoordsFromKakao(address);
+  if (!coords) {
+    alert("주소의 좌표를 찾을 수 없습니다. 다시 시도해주세요.");
     return;
   }
-  const lat = parseFloat(data[0].lat);
-  const lng = parseFloat(data[0].lon);
 
-  const newProperty = { address, type, dealType, price, monthly, area, floor, maintenance, memo, lat, lng };
+  const newProperty = { address, type, dealType, price, monthly, area, floor, maintenance, memo, lat: coords.lat, lng: coords.lng };
   properties.push(newProperty);
   localStorage.setItem("properties", JSON.stringify(properties));
-
   formLayer.style.display = "none";
   renderProperties();
 });
