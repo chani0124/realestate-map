@@ -1,25 +1,14 @@
-html, body {
-  height: 100%;
-  margin: 0;
-}
-#map {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  z-index: 0;
-}
+/* 지도 영역 */
+#map { width: 100%; height: 100%; }
 
-/* ✅ 지도 위로 폼이 올라오게 */
-#propertyFormLayer {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  display: none;
-  justify-content: center;
-  align-items: center;
+/* 모달이 반드시 지도 위에 올라오도록 */
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 400; /* 지도 UI는 400대 */
 }
-#propertyFormLayer > div {
-  z-index: 10000;
-}
+#propertyFormLayer { z-index: 10000; } /* 모달이 최상단 */
+
+/* 목록 카드 */
+.property-card { transition: background-color .15s; }
+.property-card:hover { background-color: #f3f4f6; }
