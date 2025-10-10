@@ -8,10 +8,10 @@ L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
 let markerGroup = L.markerClusterGroup();
 map.addLayer(markerGroup);
 
-// LocalStorage에서 매물 불러오기
+// LocalStorage 로드
 let properties = JSON.parse(localStorage.getItem("properties")) || [];
 
-// 지도 및 목록 갱신
+// 매물 표시
 function renderProperties(filterType = "전체") {
   markerGroup.clearLayers();
   const list = document.getElementById("propertyList");
@@ -19,7 +19,7 @@ function renderProperties(filterType = "전체") {
 
   properties
     .filter((p) => filterType === "전체" || p.type === filterType)
-    .forEach((p, idx) => {
+    .forEach((p) => {
       const marker = L.marker([p.lat, p.lng]).bindPopup(
         `<b>${p.type}</b><br>${p.dealType}<br>${p.price}/${p.monthly}<br>${p.address}`
       );
@@ -41,7 +41,7 @@ function renderProperties(filterType = "전체") {
 }
 renderProperties();
 
-// 매물 등록 폼
+// 폼 열기/닫기
 const formLayer = document.getElementById("propertyFormLayer");
 document.getElementById("openFormBtn").addEventListener("click", () => {
   formLayer.style.display = "flex";
@@ -50,9 +50,22 @@ document.getElementById("closeFormBtn").addEventListener("click", () => {
   formLayer.style.display = "none";
 });
 
-document.getElementById("propertyForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+// ✅ 엔터키로 등록 방지
+document.getElementById("propertyForm").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") e.preventDefault();
+});
 
+// ✅ 카카오 주소검색 팝업
+document.getElementById("address").addEventListener("click", function () {
+  new daum.Postcode({
+    oncomplete: function (data) {
+      document.getElementById("address").value = data.address;
+    },
+  }).open();
+});
+
+// 매물 등록
+document.getElementById("submitBtn").addEventListener("click", async () => {
   const address = document.getElementById("address").value.trim();
   const type = document.getElementById("type").value;
   const dealType = document.getElementById("dealType").value;
@@ -63,7 +76,11 @@ document.getElementById("propertyForm").addEventListener("submit", async (e) => 
   const maintenance = document.getElementById("maintenance").value;
   const memo = document.getElementById("memo").value;
 
-  // 주소를 좌표로 변환 (Nominatim 사용)
+  if (!address) {
+    alert("주소를 입력해주세요.");
+    return;
+  }
+
   const res = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
   );
@@ -80,7 +97,6 @@ document.getElementById("propertyForm").addEventListener("submit", async (e) => 
   localStorage.setItem("properties", JSON.stringify(properties));
 
   formLayer.style.display = "none";
-  e.target.reset();
   renderProperties();
 });
 
