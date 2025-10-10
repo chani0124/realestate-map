@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>부동산 매물 메모장</title>
+  <title>🏠 부동산 매물 메모장</title>
 
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -13,42 +13,42 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- MarkerCluster -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
   <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 
-  <!-- SheetJS (엑셀 내보내기) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <!-- XLSX -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <!-- ✅ 카카오 주소검색 API -->
-  <script src="//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+  <!-- ✅ 카카오 지도 SDK (JavaScript 키 사용) -->
+  <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=4a7ad4f99cd514542c44be5cd36d3076c&libraries=services,clusterer"></script>
 
   <link rel="stylesheet" href="style.css"/>
 </head>
-<body class="bg-gray-100 flex flex-col min-h-screen overflow-hidden">
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
   <!-- 헤더 -->
-  <header class="bg-white shadow p-4 flex justify-between items-center relative z-20">
+  <header class="bg-white shadow p-4 flex justify-between items-center">
     <h1 class="text-xl font-bold">🏠 부동산 매물 메모장</h1>
-    <button id="exportExcel" class="bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded">엑셀로 내보내기</button>
+    <button id="exportExcel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">엑셀로 내보내기</button>
   </header>
 
-  <!-- 상단 카테고리 -->
-  <div class="bg-white border-b relative z-20">
+  <!-- 카테고리 -->
+  <div class="bg-white border-b">
     <div class="max-w-7xl mx-auto p-3 flex gap-2 overflow-x-auto text-sm">
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="전체">전체</button>
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="아파트">아파트</button>
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="오피스텔">오피스텔</button>
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="빌라/주택">빌라/주택</button>
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="원룸/투룸">원룸/투룸</button>
-      <button class="category-btn px-3 py-1 rounded bg-gray-100 hover:bg-blue-100" data-type="상가/공장/토지">상가/공장/토지</button>
+      <button class="category-btn px-3 py-1 rounded bg-blue-200" data-type="전체">전체</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100" data-type="아파트">아파트</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100" data-type="오피스텔">오피스텔</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100" data-type="빌라/주택">빌라/주택</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100" data-type="원룸/투룸">원룸/투룸</button>
+      <button class="category-btn px-3 py-1 rounded bg-gray-100" data-type="상가/공장/토지">상가/공장/토지</button>
     </div>
   </div>
 
-  <!-- 메인 -->
-  <main class="flex flex-1 min-h-0 relative">
-    <!-- 왼쪽 -->
-    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0 z-10">
+  <!-- 본문 -->
+  <main class="flex flex-1 min-h-0">
+    <!-- 왼쪽 매물 리스트 -->
+    <section class="w-full md:w-1/3 bg-white border-r flex flex-col min-h-0">
       <div class="p-3 border-b flex justify-between items-center">
         <h2 class="text-base font-semibold">매물 목록</h2>
         <button id="openFormBtn" class="bg-blue-500 hover:bg-blue-600 text-white text-sm px-3 py-1 rounded">+ 매물 등록</button>
@@ -56,39 +56,68 @@
       <div id="propertyList" class="flex-1 overflow-y-auto p-3 space-y-3 text-sm"></div>
     </section>
 
-    <!-- 지도 -->
-    <section class="flex-1 relative min-h-0 z-0">
+    <!-- 오른쪽 지도 -->
+    <section class="flex-1 relative min-h-0">
       <div id="map" class="absolute inset-0"></div>
     </section>
   </main>
 
   <!-- 매물 등록 폼 -->
-  <div id="propertyFormLayer" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-[99999]">
+  <div id="propertyFormLayer" class="fixed inset-0 bg-black/40 hidden justify-center items-center z-50">
     <div class="bg-white w-full max-w-lg rounded shadow-lg p-5 relative">
       <button id="closeFormBtn" class="absolute top-2 right-2 text-gray-500 hover:text-black">✕</button>
       <h2 class="text-lg font-bold mb-3">매물 등록</h2>
       <form id="propertyForm" class="space-y-2">
-        <input id="address" type="text" placeholder="주소 검색" readonly class="w-full border p-2 rounded text-sm cursor-pointer" required/>
-        <select id="type" class="w-full border p-2 rounded text-sm">
-          <option>아파트</option>
-          <option>오피스텔</option>
-          <option>빌라/주택</option>
-          <option>원룸/투룸</option>
-          <option>상가/공장/토지</option>
-        </select>
-        <select id="dealType" class="w-full border p-2 rounded text-sm">
-          <option>매매</option>
-          <option>전세</option>
-          <option>월세</option>
-          <option>단기임대</option>
-        </select>
-        <input id="price" type="text" placeholder="보증금/매매가" class="w-full border p-2 rounded text-sm"/>
-        <input id="monthly" type="text" placeholder="월세" class="w-full border p-2 rounded text-sm"/>
-        <input id="area" type="number" placeholder="면적 (㎡)" class="w-full border p-2 rounded text-sm"/>
-        <input id="floor" type="text" placeholder="층수" class="w-full border p-2 rounded text-sm"/>
-        <input id="maintenance" type="text" placeholder="관리비" class="w-full border p-2 rounded text-sm"/>
-        <textarea id="memo" placeholder="기타 메모" class="w-full border p-2 rounded text-sm"></textarea>
-        <button id="submitBtn" type="button" class="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded">매물 등록</button>
+        <div>
+          <label class="block text-sm mb-1">주소</label>
+          <input id="address" type="text" placeholder="예) 서울특별시 강남구 테헤란로 427" class="w-full border p-2 rounded text-sm" required/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">매물 종류</label>
+          <select id="type" class="w-full border p-2 rounded text-sm">
+            <option>아파트</option>
+            <option>오피스텔</option>
+            <option>빌라/주택</option>
+            <option>원룸/투룸</option>
+            <option>상가/공장/토지</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">거래 유형</label>
+          <select id="dealType" class="w-full border p-2 rounded text-sm">
+            <option>매매</option>
+            <option>전세</option>
+            <option>월세</option>
+            <option>단기임대</option>
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <div class="flex-1">
+            <label class="block text-sm mb-1">보증금/매매가</label>
+            <input id="price" type="number" class="w-full border p-2 rounded text-sm"/>
+          </div>
+          <div class="flex-1">
+            <label class="block text-sm mb-1">월세</label>
+            <input id="monthly" type="number" class="w-full border p-2 rounded text-sm"/>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">면적 (㎡)</label>
+          <input id="area" type="number" class="w-full border p-2 rounded text-sm"/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">층수</label>
+          <input id="floor" type="text" class="w-full border p-2 rounded text-sm"/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">관리비</label>
+          <input id="maintenance" type="number" class="w-full border p-2 rounded text-sm"/>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">기타 메모</label>
+          <textarea id="memo" class="w-full border p-2 rounded text-sm"></textarea>
+        </div>
+        <button id="submitBtn" type="button" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">매물 등록</button>
       </form>
     </div>
   </div>
