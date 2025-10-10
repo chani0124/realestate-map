@@ -1,28 +1,52 @@
-/* 지도 꽉 채우기 */
+/* 지도 영역 */
 #map {
   width: 100%;
   height: 100%;
   min-height: 600px;
-  z-index: 1; /* 지도는 기본 레벨 */
+  z-index: 1;
+  position: relative;
 }
 
-/* 등록 폼 레이어는 지도보다 위 */
+/* 매물 등록 폼 레이어 - 항상 최상단 */
 #propertyFormLayer {
-  z-index: 9999 !important;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: none;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0,0,0,0.5);
+  z-index: 99999 !important;
 }
 
-/* 스크롤 및 전체 높이 보정 */
+/* Leaflet 지도 내부 요소가 위로 안 뜨게 강제 */
+.leaflet-container {
+  z-index: 1 !important;
+}
+.leaflet-pane,
+.leaflet-map-pane,
+.leaflet-tile,
+.leaflet-overlay-pane,
+.leaflet-shadow-pane,
+.leaflet-marker-pane,
+.leaflet-popup-pane {
+  z-index: 1 !important;
+}
+
+/* 전체 높이 보정 */
 html, body {
   height: 100%;
   overflow: hidden;
 }
 
-/* 매물 리스트 스크롤 가능 */
+/* 매물 목록 스크롤 */
 #propertyList {
   overflow-y: auto;
 }
 
-/* Tailwind 오버레이 대비용 */
+/* Tailwind 충돌 방지 */
 .fixed {
   position: fixed !important;
 }
