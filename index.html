@@ -1,165 +1,92 @@
 <!DOCTYPE html>
 <html lang="ko">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>부동산 매물 메모장 - Himkong</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>부동산 매물 메모장</title>
 
-    <!-- TailwindCSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Leaflet -->
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet (지도) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <!-- 기본 스타일 -->
+  <link rel="stylesheet" href="./style.css?v=20251011"/>
+</head>
 
-    <style>
-      html,
-      body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-        background-color: #f8fafc;
-      }
-      #map {
-        height: 100%;
-        width: 100%;
-      }
-    </style>
-  </head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
 
-  <body class="flex flex-col h-screen">
-    <!-- 상단 헤더 -->
-    <header
-      class="bg-white shadow p-4 flex justify-between items-center border-b border-gray-200"
-    >
-      <h1 class="text-xl font-bold flex items-center">🏠 부동산 매물 메모장</h1>
-      <button
-        id="openForm"
-        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        + 매물 등록
+  <!-- 헤더 -->
+  <header class="bg-white border-b shadow-sm p-4 flex items-center justify-between">
+    <h1 class="text-xl font-bold">🏠 부동산 매물 메모장</h1>
+    <button id="openFormBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+      + 매물 등록
+    </button>
+  </header>
+
+  <!-- 본문 -->
+  <main class="flex flex-1 min-h-0">
+    <!-- 왼쪽 리스트 -->
+    <aside id="propertyList"
+           class="w-full md:w-1/3 bg-white border-r p-3 overflow-y-auto">
+      <p class="text-gray-500 text-sm text-center mt-6">등록된 매물이 없습니다.</p>
+    </aside>
+
+    <!-- 오른쪽 지도 -->
+    <section class="flex-1 relative min-h-0">
+      <div id="map" class="absolute inset-0"></div>
+    </section>
+  </main>
+
+  <!-- 매물 등록 폼 (모달) -->
+  <div id="formLayer"
+       class="fixed inset-0 bg-black/50 hidden items-center justify-center z-[1000]">
+    <div class="bg-white w-full max-w-lg rounded-lg shadow-lg p-5 relative">
+      <button id="closeFormBtn"
+              class="absolute top-2 right-2 text-gray-500 hover:text-black">
+        ✕
       </button>
-    </header>
+      <h2 class="text-lg font-bold mb-3">매물 등록</h2>
 
-    <!-- 메인 -->
-    <main class="flex flex-1 overflow-hidden">
-      <!-- 왼쪽 리스트 -->
-      <aside
-        id="property-list"
-        class="w-1/3 bg-white border-r overflow-y-auto p-2"
-      >
-        <p class="text-gray-500 text-center mt-5">매물 데이터를 불러오는 중...</p>
-      </aside>
+      <form id="propertyForm" class="space-y-2">
+        <input name="address" placeholder="주소" required class="w-full border p-2 rounded text-sm"/>
 
-      <!-- 오른쪽 지도 -->
-      <div id="map" class="flex-1"></div>
-    </main>
-
-    <!-- 매물 등록 폼 -->
-    <div
-      id="formModal"
-      class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50"
-    >
-      <form
-        id="add-form"
-        class="bg-white p-6 rounded-lg shadow-lg w-96 space-y-3 max-h-[90vh] overflow-y-auto"
-      >
-        <h2 class="text-lg font-bold mb-3">매물 등록</h2>
-
-        <input
-          name="address"
-          placeholder="주소"
-          required
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="type"
-          placeholder="매물 종류 (아파트, 오피스텔 등)"
-          required
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="dealType"
-          placeholder="거래 유형 (매매, 전세, 월세)"
-          required
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="price"
-          placeholder="매매가 또는 보증금"
-          type="number"
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="monthly"
-          placeholder="월세"
-          type="number"
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="area"
-          placeholder="면적 (㎡)"
-          type="number"
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="floor"
-          placeholder="층수"
-          class="w-full border p-2 rounded"
-        />
-        <input
-          name="maintenance"
-          placeholder="관리비"
-          type="number"
-          class="w-full border p-2 rounded"
-        />
-        <textarea
-          name="memo"
-          placeholder="기타 메모"
-          class="w-full border p-2 rounded"
-        ></textarea>
-        <div class="flex gap-2">
-          <input
-            name="lat"
-            placeholder="위도"
-            type="number"
-            step="0.000001"
-            class="w-1/2 border p-2 rounded"
-          />
-          <input
-            name="lng"
-            placeholder="경도"
-            type="number"
-            step="0.000001"
-            class="w-1/2 border p-2 rounded"
-          />
+        <div class="grid grid-cols-2 gap-2">
+          <input name="type" placeholder="매물 종류(아파트/오피스텔 등)" required class="border p-2 rounded text-sm"/>
+          <input name="dealType" placeholder="거래 유형(매매/전세/월세)" required class="border p-2 rounded text-sm"/>
         </div>
 
-        <div class="flex justify-between mt-4">
-          <button
-            type="submit"
-            class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            등록
-          </button>
-          <button
-            type="button"
-            id="closeForm"
-            class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-          >
-            닫기
-          </button>
+        <div class="grid grid-cols-2 gap-2">
+          <input name="price" type="number" placeholder="보증금/매매가" class="border p-2 rounded text-sm"/>
+          <input name="monthly" type="number" placeholder="월세" class="border p-2 rounded text-sm"/>
         </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <input name="area" type="number" placeholder="면적(㎡)" class="border p-2 rounded text-sm"/>
+          <input name="floor" placeholder="층수" class="border p-2 rounded text-sm"/>
+          <input name="maintenance" type="number" placeholder="관리비" class="border p-2 rounded text-sm"/>
+        </div>
+
+        <textarea name="memo" placeholder="기타 메모" class="w-full border p-2 rounded text-sm"></textarea>
+
+        <div class="grid grid-cols-2 gap-2">
+          <input name="lat" type="number" step="0.000001" placeholder="위도" class="border p-2 rounded text-sm"/>
+          <input name="lng" type="number" step="0.000001" placeholder="경도" class="border p-2 rounded text-sm"/>
+        </div>
+        <p class="text-xs text-gray-500">Tip: 모달이 열린 상태에서 지도를 클릭하면 위도/경도가 자동 입력됩니다.</p>
+
+        <button type="submit"
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded">
+          매물 등록
+        </button>
       </form>
     </div>
+  </div>
 
-    <!-- main.js -->
-    <script src="./main.js"></script>
-  </body>
+  <!-- 스크립트 -->
+  <script src="./main.js?v=20251011"></script>
+</body>
 </html>
